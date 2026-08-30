@@ -116,9 +116,10 @@ def download_file(token):
     response = send_file(
         str(safe),
         mimetype="application/octet-stream",
+        as_attachment=False,
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Content-Disposition"] = "inline"
+    response.headers.pop("Content-Disposition", None)
     return response
 
 
