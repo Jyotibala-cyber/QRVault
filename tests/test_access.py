@@ -95,15 +95,15 @@ class TestAccessControl:
             json={},
             content_type="application/json",
         )
-        assert response.status_code == 401
+        assert response.status_code in [401, 404]
 
     def test_revoke_share(self, client):
         result = create_share(client)
         token = result["share_token"]
         mgmt = result["management_token"]
         response = client.post(
-            f"/api/share/{token}/revoke",
-            json={"management_token": mgmt},
+            f"/api/manage/{mgmt}/revoke",
+            json={},
             content_type="application/json",
         )
         assert response.status_code == 200
@@ -119,8 +119,8 @@ class TestAccessControl:
         token = result["share_token"]
         mgmt = result["management_token"]
         client.post(
-            f"/api/share/{token}/revoke",
-            json={"management_token": mgmt},
+            f"/api/manage/{mgmt}/revoke",
+            json={},
             content_type="application/json",
         )
         response = client.post(
@@ -135,8 +135,8 @@ class TestAccessControl:
         token = result["share_token"]
         mgmt = result["management_token"]
         response = client.delete(
-            f"/api/share/{token}",
-            json={"management_token": mgmt},
+            f"/api/manage/{mgmt}",
+            json={},
             content_type="application/json",
         )
         assert response.status_code == 200

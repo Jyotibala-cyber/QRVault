@@ -66,17 +66,15 @@
 
 <script>
     window.__MGMT_TOKEN__ = "{{ management_token }}";
-    window.__SHARE_TOKEN__ = "{{ share.token_hash }}";
     window.__REMAINING__ = {{ remaining_seconds }};
     window.__IS_EXPIRED__ = {{ 'true' if is_expired else 'false' }};
 
     (function() {
-        const token = window.__SHARE_TOKEN__;
-        const mgmtToken = window.__MGMT_TOKEN__;
+        var mgmtToken = window.__MGMT_TOKEN__;
 
-        fetch('/api/share/' + token + '/manage-status?management_token=' + encodeURIComponent(mgmtToken))
-            .then(r => r.json())
-            .then(data => {
+        fetch('/api/manage/' + encodeURIComponent(mgmtToken) + '/status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.filename) {
                     document.getElementById('mgmtFilename').textContent = data.filename;
                     document.getElementById('mgmtDownloads').textContent = data.download_count + ' / ' + data.max_downloads;
@@ -85,15 +83,16 @@
                     if (data.status !== 'active') {
                         document.getElementById('mgmtRevokeBtn').disabled = true;
                     }
+                    var shareUrl = window.location.origin + '/share/' + data.token_hash;
+                    document.getElementById('mgmtShareLink').value = shareUrl;
                 }
             });
 
         var baseUrl = window.location.origin;
-        document.getElementById('mgmtShareLink').value = baseUrl + '/share/' + token;
+        document.getElementById('mgmtShareLink').value = baseUrl + '/share/...';
 
         var qrImg = document.getElementById('mgmtQrCode');
-        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(baseUrl + '/share/' + token);
-        qrImg.src = qrUrl;
+        qrImg.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="250"><text x="50%" y="50%" text-anchor="middle" fill="%238899AA" font-size="14">Loading QR...</text></svg>';
 
         function updateCountdown() {
             var remaining = window.__REMAINING__;
@@ -120,18 +119,20 @@
             linkInput.select();
             navigator.clipboard.writeText(linkInput.value).then(function() {
                 showMessage('Link copied!', 'success');
+            }).catch(function() {
+                document.execCommand('copy');
+                showMessage('Link copied!', 'success');
             });
         });
 
         document.getElementById('mgmtRevokeBtn').addEventListener('click', function() {
             if (!confirm('Revoke access? The file will no longer be downloadable.')) return;
-            fetch('/api/share/' + token + '/revoke', {
+            fetch('/api/manage/' + encodeURIComponent(mgmtToken) + '/revoke', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({management_token: mgmtToken})
+                headers: {'Content-Type': 'application/json'}
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.success) {
                     showMessage('Access revoked successfully', 'success');
                     document.getElementById('mgmtStatus').textContent = 'REVOKED';
@@ -146,13 +147,12 @@
 
         document.getElementById('mgmtDeleteBtn').addEventListener('click', function() {
             if (!confirm('Permanently delete this share and its file?')) return;
-            fetch('/api/share/' + token, {
+            fetch('/api/manage/' + encodeURIComponent(mgmtToken), {
                 method: 'DELETE',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({management_token: mgmtToken})
+                headers: {'Content-Type': 'application/json'}
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.success) {
                     showMessage('Share deleted', 'success');
                     setTimeout(function() { window.location.href = '/'; }, 2000);

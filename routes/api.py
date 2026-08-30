@@ -123,21 +123,12 @@ def download_file(token):
     return response
 
 
-@api_bp.route("/share/<token>/revoke", methods=["POST"])
-def revoke_share(token):
-    data = request.get_json(silent=True) or {}
-    mgmt_token = data.get("management_token")
-    if not mgmt_token:
-        return jsonify({"error": "Management token required"}), 401
-
-    mgmt_h = hash_token(mgmt_token)
+@api_bp.route("/manage/<management_token>/revoke", methods=["POST"])
+def revoke_share(management_token):
+    mgmt_h = hash_token(management_token)
     share = Share.find_by_management_token(mgmt_h)
     if not share:
         return jsonify({"error": "Invalid management token"}), 404
-
-    token_h = hash_token(token)
-    if share["token_hash"] != token_h:
-        return jsonify({"error": "Token mismatch"}), 403
 
     Share.revoke(share["id"])
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
@@ -146,21 +137,12 @@ def revoke_share(token):
     return jsonify({"success": True, "message": "Share revoked successfully"})
 
 
-@api_bp.route("/share/<token>", methods=["DELETE"])
-def delete_share(token):
-    data = request.get_json(silent=True) or {}
-    mgmt_token = data.get("management_token")
-    if not mgmt_token:
-        return jsonify({"error": "Management token required"}), 401
-
-    mgmt_h = hash_token(mgmt_token)
+@api_bp.route("/manage/<management_token>", methods=["DELETE"])
+def delete_share(management_token):
+    mgmt_h = hash_token(management_token)
     share = Share.find_by_management_token(mgmt_h)
     if not share:
         return jsonify({"error": "Invalid management token"}), 404
-
-    token_h = hash_token(token)
-    if share["token_hash"] != token_h:
-        return jsonify({"error": "Token mismatch"}), 403
 
     delete_encrypted_file(share["stored_filename"])
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
@@ -170,21 +152,12 @@ def delete_share(token):
     return jsonify({"success": True, "message": "Share deleted successfully"})
 
 
-@api_bp.route("/share/<token>/manage-status")
-def manage_status(token):
-    data = request.args
-    mgmt_token = data.get("management_token")
-    if not mgmt_token:
-        return jsonify({"error": "Management token required"}), 401
-
-    mgmt_h = hash_token(mgmt_token)
+@api_bp.route("/manage/<management_token>/status")
+def manage_status(management_token):
+    mgmt_h = hash_token(management_token)
     share = Share.find_by_management_token(mgmt_h)
     if not share:
         return jsonify({"error": "Invalid management token"}), 404
-
-    token_h = hash_token(token)
-    if share["token_hash"] != token_h:
-        return jsonify({"error": "Token mismatch"}), 403
 
     now = datetime.now(timezone.utc)
     expires_at = datetime.fromisoformat(share["expires_at"])
