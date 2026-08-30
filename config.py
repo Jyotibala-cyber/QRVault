@@ -36,6 +36,8 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    DATABASE_PATH = str(basedir / "instance" / "qrvault.db")
+    STORAGE_PATH = str(basedir / "storage" / "encrypted")
 
 
 config_by_name = {
