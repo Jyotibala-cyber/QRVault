@@ -116,13 +116,9 @@ def download_file(token):
     response = send_file(
         str(safe),
         mimetype="application/octet-stream",
-        as_attachment=True,
-        download_name=f"{share['stored_filename']}",
-    )
-    response.headers["Content-Disposition"] = (
-        f'attachment; filename="{share["stored_filename"]}"'
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Content-Disposition"] = "inline"
     return response
 
 

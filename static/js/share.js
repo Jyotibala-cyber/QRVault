@@ -133,13 +133,20 @@
             const mimeType = authData.mime_type || "application/octet-stream";
             const decryptedBlob = new Blob([decryptedBuffer], { type: mimeType });
 
+            const url = URL.createObjectURL(decryptedBlob);
             const link = document.createElement("a");
-            link.href = URL.createObjectURL(decryptedBlob);
+            link.href = url;
             link.download = originalName;
+            link.style.display = "none";
             document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
+
+            setTimeout(function () {
+                link.click();
+                setTimeout(function () {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            }, 100);
 
             modal.classList.add("hidden");
 
