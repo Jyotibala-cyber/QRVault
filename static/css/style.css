@@ -400,6 +400,25 @@ select:focus, input[type="password"]:focus { border-color: var(--accent); }
 .success-header h3 { font-size: 1.4rem; color: var(--success); }
 
 .qr-section { text-align: center; margin: 24px 0; }
+#qrCode {
+    display: inline-block;
+    padding: 12px;
+    background: white;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+}
+#qrCode img {
+    display: block;
+    max-width: 250px;
+    height: auto;
+    margin: 0 auto;
+}
+#qrCode canvas {
+    display: block;
+    max-width: 250px;
+    height: auto;
+    margin: 0 auto;
+}
 .qr-image {
     max-width: 250px;
     border-radius: var(--radius-sm);
