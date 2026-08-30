@@ -30,29 +30,6 @@ with QR codes, expiring links, and access controls.
 
 </div>
 
----
-
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Project Objective](#project-objective)
-- [Live Demo](#live-demo)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [How It Works](#how-it-works)
-- [Encryption Design](#encryption-design)
-- [Technology Stack](#technology-stack)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running Locally](#running-locally)
-- [API Reference](#api-reference)
-- [Testing](#testing)
-- [Security Features](#security-features)
-- [Deployment](#deployment)
-- [Internship Requirement Mapping](#internship-requirement-mapping)
-- [Limitations](#limitations)
-- [Future Enhancements](#future-enhancements)
-- [Disclaimer](#disclaimer)
 
 ---
 
@@ -171,46 +148,6 @@ QRVault/
 
 ---
 
-## ⚙️ How It Works
-
-### Upload Flow
-```
-User selects file
-      ↓
-Browser generates AES-256-GCM key (Web Crypto API)
-      ↓
-Browser encrypts file locally (never leaves browser as plaintext)
-      ↓
-Encrypted file uploaded to server
-      ↓
-Server generates unique share token + management token
-      ↓
-Client generates QR code with full URL (including #key fragment)
-      ↓
-Encryption key stored ONLY in URL fragment (#key) — never sent to server
-```
-
-### Download Flow
-```
-Receiver scans QR code / opens share link
-      ↓
-Browser loads share page (URL fragment stays in browser)
-      ↓
-Receiver clicks "Download Securely"
-      ↓
-Server sends encrypted ciphertext
-      ↓
-Browser extracts key from URL fragment
-      ↓
-Browser decrypts ciphertext locally (AES-256-GCM)
-      ↓
-Original file saved to receiver's device
-      ↓
-File auto-deleted from server (if limit reached)
-```
-
----
-
 ## 🔒 Encryption Design
 
 ### Why AES-256-GCM?
@@ -222,52 +159,7 @@ File auto-deleted from server (if limit reached)
 | **Industry Standard** | Widely supported and well-analyzed |
 | **Bulk Encryption** | Efficient for large files (vs RSA) |
 
-### Key Management
-
-```
-┌─────────────────────────────────────────────────┐
-│                  BROWSER (Client)                │
-│                                                  │
-│  1. Generate 256-bit AES key                     │
-│     window.crypto.subtle.generateKey()           │
-│                                                  │
-│  2. Generate random 12-byte IV                   │
-│     window.crypto.getRandomValues()              │
-│                                                  │
-│  3. Encrypt file: AES-GCM(key, iv, plaintext)   │
-│                                                  │
-│  4. Export key as Base64 → store in URL #fragment │
-│                                                  │
-└─────────────────────────────────────────────────┘
-                      │
-                      │ Only encrypted ciphertext
-                      │ sent to server
-                      ▼
-┌─────────────────────────────────────────────────┐
-│                   SERVER                        │
-│                                                  │
-│  • Stores encrypted file (.enc)                  │
-│  • NEVER receives AES key                        │
-│  • NEVER sees plaintext file                     │
-│  • Key stays in browser only (URL fragment)      │
-│                                                  │
-└─────────────────────────────────────────────────┘
-```
-
-### URL Fragment Security
-
-```
-https://qrvault.onrender.com/share/xAbCdEfGhIjKlMnO#Base64EncodedAES256Key
-                                    ▲                    ▲
-                                    │                    │
-                              Share Token         Encryption Key
-                              (sent to server)    (NEVER sent to server)
-```
-
-> **Important:** The URL fragment (`#key`) is **NOT** sent to the server in HTTP requests. The server only receives `/share/TOKEN`.
-
 ---
-
 ## 🛠 Technology Stack
 
 | Component | Technology | Purpose |
@@ -327,22 +219,6 @@ DATABASE_URL=instance/qrvault.db
 STORAGE_PATH=storage/encrypted
 MAX_FILE_SIZE=52428800
 ```
-
----
-
-## ⚙️ Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SECRET_KEY` | Random | Flask secret key (CHANGE in production) |
-| `DATABASE_URL` | `instance/qrvault.db` | SQLite database path |
-| `STORAGE_PATH` | `storage/encrypted` | Encrypted file storage path |
-| `MAX_FILE_SIZE` | `52428800` (50MB) | Maximum upload file size |
-| `RATE_LIMIT_UPLOAD` | `30 per hour` | Upload rate limit per IP |
-| `RATE_LIMIT_DOWNLOAD` | `60 per hour` | Download rate limit per IP |
-| `CLEANUP_INTERVAL` | `300` (5 min) | Background cleanup interval |
-| `RETENTION_PERIOD` | `86400` (24 hrs) | File retention after expiry |
-
 ---
 
 ## 🚀 Running Locally
@@ -356,24 +232,6 @@ gunicorn app:app --bind 0.0.0.0:5000
 ```
 
 The application will be available at: **http://localhost:5000**
-
----
-
-## 📡 API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Landing page |
-| `GET` | `/upload` | Upload page |
-| `POST` | `/api/upload` | Upload & encrypt file |
-| `GET` | `/share/<token>` | Share/download page |
-| `GET` | `/api/share/<token>/status` | Get share status |
-| `POST` | `/api/share/<token>/authorize` | Authorize download |
-| `GET` | `/api/share/<token>/download` | Download encrypted file |
-| `GET` | `/manage/<mgmt_token>` | Management page |
-| `GET` | `/api/manage/<mgmt_token>/status` | Management status |
-| `POST` | `/api/manage/<mgmt_token>/revoke` | Revoke access |
-| `DELETE` | `/api/manage/<mgmt_token>` | Delete share |
 
 ---
 
@@ -392,20 +250,6 @@ pytest tests/ -v --tb=short
 # Run specific test
 pytest tests/test_access.py::TestAccessControl::test_valid_token_access -v
 ```
-
-### Test Coverage: 44 Tests
-
-| Test Category | Tests | Status |
-|--------------|-------|--------|
-| Upload Validation | 7 | ✅ All Pass |
-| Access Control | 10 | ✅ All Pass |
-| Download Limits | 4 | ✅ All Pass |
-| Expiration | 3 | ✅ All Pass |
-| Token Security | 5 | ✅ All Pass |
-| Filename Sanitization | 6 | ✅ All Pass |
-| File Validation | 6 | ✅ All Pass |
-| Path Traversal | 2 | ✅ All Pass |
-| Security Headers | 1 | ✅ All Pass |
 
 ---
 
@@ -436,69 +280,12 @@ pytest tests/test_access.py::TestAccessControl::test_valid_token_access -v
 | 19 | Auto-delete on expiry/limit/revoke | ✅ |
 | 20 | Audit logging | ✅ |
 
-### Security Headers
-
-```
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-X-XSS-Protection: 1; mode=block
-Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; ...
-Referrer-Policy: strict-origin-when-cross-origin
-Cache-Control: no-store, no-cache, must-revalidate
-```
-
----
 
 ## 🚀 Deployment
 
 ### Render (Current)
 
 The live deployment is on [Render](https://qrvault.onrender.com/):
-
-```bash
-# render.yaml is included for one-click deployment
-# Or manually:
-# 1. Connect GitHub repo on Render
-# 2. Set build command: pip install -r requirements.txt
-# 3. Set start command: gunicorn app:app --bind 0.0.0.0:$PORT
-# 4. Add env var: FLASK_ENV=production
-```
-
-### Local Production
-
-```bash
-# With gunicorn
-pip install gunicorn
-gunicorn app:app --bind 0.0.0.0:8000 --workers 4
-
-# With systemd service (Linux)
-# See deployment docs for systemd configuration
-```
-
-### HTTPS (Required for Production)
-
-> ⚠️ **Important:** For production deployment, HTTPS is required. The URL fragment encryption key is only secure over HTTPS.
-
-- Render provides automatic HTTPS
-- For self-hosted: Use Let's Encrypt / Certbot
-- Never claim production is secure without HTTPS
-
----
-
-## 🎓 Internship Requirement Mapping
-
-| Requirement | QRVault Implementation |
-|-------------|----------------------|
-| Secure File Sharing | Encrypted file upload/download with access control |
-| End-to-End Encryption | Client-side AES-256-GCM encryption & local decryption |
-| Expiring Links | Server-side expiration validation (5min - 24hr) |
-| Access Controls | Token-based access, download limits, revocation |
-| Secure Communication | HTTPS recommended for production |
-| File Encryption | AES-256-GCM (authenticated encryption) |
-| Python | Flask backend |
-| RSA/AES | AES primary, RSA optional for key wrapping |
-| Database | SQLite with proper schema |
-| Testing | 44 automated pytest tests |
 
 ---
 
