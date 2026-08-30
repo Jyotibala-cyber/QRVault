@@ -1,0 +1,44 @@
+# Database
+instance/
+*.db
+*.sqlite3
+
+# Storage
+storage/encrypted/*
+!storage/encrypted/.gitkeep
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Secrets - NEVER commit these
+# AES keys, management tokens, password hashes

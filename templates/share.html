@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Secure Download{% endblock %}
+{% block content %}
+<div class="share-container">
+    <div class="share-card">
+        <div class="share-header">
+            <span class="share-icon">🔐</span>
+            <h2>Secure File</h2>
+        </div>
+
+        <div class="share-details">
+            <div class="detail-row">
+                <span class="detail-label">Filename</span>
+                <span class="detail-value" id="shareFilename">{{ share.original_filename }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">File Size</span>
+                <span class="detail-value" id="shareFileSize">{{ "%.1f"|format(share.file_size / 1024 / 1024) }} MB</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="detail-value status-badge status-{{ share.status }}" id="shareStatusBadge">
+                    {{ share.status|upper }}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Expires</span>
+                <span class="detail-value" id="shareCountdown">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Downloads</span>
+                <span class="detail-value" id="shareDownloadCount">{{ share.download_count }} / {{ share.max_downloads }}</span>
+            </div>
+        </div>
+
+        {% if has_password %}
+        <div class="password-section" id="passwordSection">
+            <label for="passwordInput">Enter password to download</label>
+            <input type="password" id="passwordInput" placeholder="Password required">
+            <p class="password-hint" id="passwordError" style="display:none;color:#FF5252;">Incorrect password</p>
+        </div>
+        {% endif %}
+
+        <div class="security-notice">
+            <span class="notice-icon">🔒</span>
+            <p>This file was encrypted before being uploaded. Your browser will decrypt it locally after download.</p>
+        </div>
+
+        <button id="downloadBtn" class="btn btn-primary btn-lg btn-full">
+            Download Securely
+        </button>
+    </div>
+</div>
+
+<div id="downloadModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+        <h3>Download this file?</h3>
+        <div class="modal-details">
+            <p><strong>File:</strong> <span id="modalFilename">{{ share.original_filename }}</span></p>
+            <p><strong>Size:</strong> <span id="modalFileSize">{{ "%.1f"|format(share.file_size / 1024 / 1024) }} MB</span></p>
+            <p class="modal-security">Your browser will decrypt the file locally after download.</p>
+        </div>
+        <div class="modal-actions">
+            <button id="cancelDownload" class="btn btn-outline">Cancel</button>
+            <button id="acceptDownload" class="btn btn-primary">Accept & Download</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.__SHARE_TOKEN__ = "{{ token }}";
+    window.__REMAINING__ = {{ remaining_seconds }};
+    window.__HAS_PASSWORD__ = {{ 'true' if has_password else 'false' }};
+</script>
+<script src="{{ url_for('static', filename='js/encryption.js') }}"></script>
+<script src="{{ url_for('static', filename='js/share.js') }}"></script>
+{% endblock %}

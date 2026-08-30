@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Manage Share{% endblock %}
+{% block content %}
+<div class="manage-container">
+    <div class="manage-card">
+        <h2 class="card-title">Share Management</h2>
+        <p class="card-subtitle">Private management panel for your shared file</p>
+
+        <div class="manage-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-info">
+                    <span class="stat-label">File</span>
+                    <span class="stat-value" id="mgmtFilename">{{ share.original_filename }}</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value status-badge status-{{ share.status }}" id="mgmtStatus">
+                        {{ share.status|upper }}
+                    </span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱</div>
+                <div class="stat-info">
+                    <span class="stat-label">Expires</span>
+                    <span class="stat-value" id="mgmtCountdown">-</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⬇</div>
+                <div class="stat-info">
+                    <span class="stat-label">Downloads</span>
+                    <span class="stat-value" id="mgmtDownloads">{{ share.download_count }} / {{ share.max_downloads }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="qr-section manage-qr">
+            <img id="mgmtQrCode" class="qr-image" alt="QR Code">
+        </div>
+
+        <div class="share-link-section">
+            <label>Share Link</label>
+            <div class="link-copy-box">
+                <input type="text" id="mgmtShareLink" readonly>
+                <button id="mgmtCopyLink" class="btn btn-sm">Copy</button>
+            </div>
+        </div>
+
+        <div class="manage-actions">
+            <button id="mgmtRevokeBtn" class="btn btn-danger" {% if share.status != 'active' %}disabled{% endif %}>
+                Revoke Access
+            </button>
+            <button id="mgmtDeleteBtn" class="btn btn-danger-outline">
+                Delete Share
+            </button>
+        </div>
+
+        <div id="mgmtMessage" class="manage-message hidden"></div>
+    </div>
+</div>
+
+<script>
+    window.__MGMT_TOKEN__ = "{{ management_token }}";
+    window.__SHARE_TOKEN__ = "{{ share.token_hash }}";
+    window.__REMAINING__ = {{ remaining_seconds }};
+    window.__IS_EXPIRED__ = {{ 'true' if is_expired else 'false' }};
+
+    (function() {
+        const token = window.__SHARE_TOKEN__;
+        const mgmtToken = window.__MGMT_TOKEN__;
+
+        fetch('/api/share/' + token + '/manage-status?management_token=' + encodeURIComponent(mgmtToken))
+            .then(r => r.json())
+            .then(data => {
+                if (data.filename) {
+                    document.getElementById('mgmtFilename').textContent = data.filename;
+                    document.getElementById('mgmtDownloads').textContent = data.download_count + ' / ' + data.max_downloads;
+                    document.getElementById('mgmtStatus').textContent = data.status.toUpperCase();
+                    document.getElementById('mgmtStatus').className = 'stat-value status-badge status-' + data.status;
+                    if (data.status !== 'active') {
+                        document.getElementById('mgmtRevokeBtn').disabled = true;
+                    }
+                }
+            });
+
+        var baseUrl = window.location.origin;
+        document.getElementById('mgmtShareLink').value = baseUrl + '/share/' + token;
+
+        var qrImg = document.getElementById('mgmtQrCode');
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(baseUrl + '/share/' + token);
+        qrImg.src = qrUrl;
+
+        function updateCountdown() {
+            var remaining = window.__REMAINING__;
+            if (remaining <= 0) {
+                document.getElementById('mgmtCountdown').textContent = 'Expired';
+                document.getElementById('mgmtStatus').textContent = 'EXPIRED';
+                return;
+            }
+            var h = Math.floor(remaining / 3600);
+            var m = Math.floor((remaining % 3600) / 60);
+            var s = remaining % 60;
+            document.getElementById('mgmtCountdown').textContent =
+                (h > 0 ? h + ':' : '') +
+                String(m).padStart(2, '0') + ':' +
+                String(s).padStart(2, '0');
+            remaining--;
+            window.__REMAINING__ = remaining;
+            setTimeout(updateCountdown, 1000);
+        }
+        updateCountdown();
+
+        document.getElementById('mgmtCopyLink').addEventListener('click', function() {
+            var linkInput = document.getElementById('mgmtShareLink');
+            linkInput.select();
+            navigator.clipboard.writeText(linkInput.value).then(function() {
+                showMessage('Link copied!', 'success');
+            });
+        });
+
+        document.getElementById('mgmtRevokeBtn').addEventListener('click', function() {
+            if (!confirm('Revoke access? The file will no longer be downloadable.')) return;
+            fetch('/api/share/' + token + '/revoke', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({management_token: mgmtToken})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('Access revoked successfully', 'success');
+                    document.getElementById('mgmtStatus').textContent = 'REVOKED';
+                    document.getElementById('mgmtStatus').className = 'stat-value status-badge status-revoked';
+                    document.getElementById('mgmtRevokeBtn').disabled = true;
+                } else {
+                    showMessage(data.error || 'Failed to revoke', 'error');
+                }
+            })
+            .catch(function() { showMessage('Network error', 'error'); });
+        });
+
+        document.getElementById('mgmtDeleteBtn').addEventListener('click', function() {
+            if (!confirm('Permanently delete this share and its file?')) return;
+            fetch('/api/share/' + token, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({management_token: mgmtToken})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('Share deleted', 'success');
+                    setTimeout(function() { window.location.href = '/'; }, 2000);
+                } else {
+                    showMessage(data.error || 'Failed to delete', 'error');
+                }
+            })
+            .catch(function() { showMessage('Network error', 'error'); });
+        });
+
+        function showMessage(msg, type) {
+            var el = document.getElementById('mgmtMessage');
+            el.textContent = msg;
+            el.className = 'manage-message ' + type;
+            el.style.display = 'block';
+            setTimeout(function() { el.style.display = 'none'; }, 5000);
+        }
+    })();
+</script>
+{% endblock %}

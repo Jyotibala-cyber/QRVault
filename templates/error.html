@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{% if error_type == 'expired' %}Link Expired{% elif error_type == 'revoked' %}Access Revoked{% elif error_type == 'limit_reached' %}Download Limit Reached{% elif error_type == 'not_found' %}Not Found{% else %}Error{% endif %}{% endblock %}
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        {% if error_type == 'expired' %}
+            <div class="error-icon">⏱</div>
+            <h2>Link Expired</h2>
+            <p class="error-message">This secure sharing link has expired and is no longer available.</p>
+            <p class="error-detail">For security, links automatically expire after the configured time period.</p>
+        {% elif error_type == 'revoked' %}
+            <div class="error-icon">🚫</div>
+            <h2>Access Revoked</h2>
+            <p class="error-message">Access to this file has been revoked by the sender.</p>
+            <p class="error-detail">The sender has disabled this sharing link.</p>
+        {% elif error_type == 'limit_reached' %}
+            <div class="error-icon">📊</div>
+            <h2>Download Limit Reached</h2>
+            <p class="error-message">The maximum number of downloads for this file has been reached.</p>
+            <p class="error-detail">The sender set a download limit and it has been exhausted.</p>
+        {% elif error_type == 'not_found' %}
+            <div class="error-icon">🔍</div>
+            <h2>File Not Found</h2>
+            <p class="error-message">The requested share link does not exist or is invalid.</p>
+            <p class="error-detail">Please check the link and try again.</p>
+        {% else %}
+            <div class="error-icon">⚠</div>
+            <h2>Error</h2>
+            <p class="error-message">An unexpected error occurred.</p>
+        {% endif %}
+
+        <a href="/" class="btn btn-primary">Go to Homepage</a>
+    </div>
+</div>
+{% endblock %}

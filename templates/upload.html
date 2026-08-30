@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Secure Upload{% endblock %}
+{% block content %}
+<div class="upload-container">
+    <div class="upload-card">
+        <h2 class="card-title">Secure File Share</h2>
+        <p class="card-subtitle">Your file will be encrypted locally before upload</p>
+
+        <div id="upload-step-1" class="upload-step active">
+            <div class="file-drop-zone" id="dropZone">
+                <div class="drop-icon">📁</div>
+                <p class="drop-text">Drag & Drop your file here</p>
+                <p class="drop-subtext">or</p>
+                <label class="btn btn-outline" for="fileInput">Select File</label>
+                <input type="file" id="fileInput" hidden>
+            </div>
+
+            <div id="fileInfo" class="file-info hidden">
+                <div class="file-detail">
+                    <span class="label">File:</span>
+                    <span id="fileName" class="value">-</span>
+                </div>
+                <div class="file-detail">
+                    <span class="label">Size:</span>
+                    <span id="fileSize" class="value">-</span>
+                </div>
+                <div class="file-detail">
+                    <span class="label">Type:</span>
+                    <span id="fileType" class="value">-</span>
+                </div>
+                <div class="file-detail">
+                    <span class="label">Encryption:</span>
+                    <span class="value status-ready" id="encryptionStatus">⏳ Pending</span>
+                </div>
+            </div>
+
+            <div class="share-settings" id="shareSettings">
+                <h3>Share Settings</h3>
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="expirySelect">Expiry Time</label>
+                        <select id="expirySelect">
+                            <option value="5">5 minutes</option>
+                            <option value="10" selected>10 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="120">2 hours</option>
+                            <option value="240">4 hours</option>
+                            <option value="480">8 hours</option>
+                            <option value="1440">24 hours</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="downloadsSelect">Download Limit</label>
+                        <select id="downloadsSelect">
+                            <option value="1">1 download</option>
+                            <option value="3" selected>3 downloads</option>
+                            <option value="5">5 downloads</option>
+                            <option value="10">10 downloads</option>
+                            <option value="25">25 downloads</option>
+                            <option value="50">50 downloads</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="passwordInput">Password Protection (Optional)</label>
+                        <input type="password" id="passwordInput" placeholder="Leave empty for no password">
+                    </div>
+                </div>
+            </div>
+
+            <div class="encryption-notice">
+                <span class="notice-icon">🔒</span>
+                <span>File will be encrypted locally using AES-256-GCM before upload.</span>
+            </div>
+
+            <button id="encryptBtn" class="btn btn-primary btn-lg btn-full" disabled>
+                Encrypt & Generate Secure Share
+            </button>
+        </div>
+
+        <div id="upload-step-2" class="upload-step hidden">
+            <div class="encrypting-animation">
+                <div class="spinner"></div>
+                <p id="encryptionProgress">Encrypting file...</p>
+            </div>
+        </div>
+
+        <div id="upload-step-3" class="upload-step hidden">
+            <div class="result-panel">
+                <div class="success-header">
+                    <span class="success-icon">✅</span>
+                    <h3>Secure Share Created</h3>
+                </div>
+
+                <div class="qr-section">
+                    <img id="qrCode" class="qr-image" alt="QR Code">
+                </div>
+
+                <div class="share-link-section">
+                    <label>Secure Link</label>
+                    <div class="link-copy-box">
+                        <input type="text" id="shareLink" readonly>
+                        <button id="copyLinkBtn" class="btn btn-sm">Copy</button>
+                    </div>
+                    <p class="link-warning">⚠ Do not share the URL fragment (after #) separately</p>
+                </div>
+
+                <div class="share-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Status</span>
+                        <span class="stat-value status-active" id="shareStatus">ACTIVE</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Expires In</span>
+                        <span class="stat-value" id="shareExpiry">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Downloads</span>
+                        <span class="stat-value" id="shareDownloads">0 / 3</span>
+                    </div>
+                </div>
+
+                <div class="result-actions">
+                    <button id="downloadQrBtn" class="btn btn-outline">Download QR</button>
+                    <button id="newShareBtn" class="btn btn-outline">Create New Share</button>
+                    <a id="manageLink" class="btn btn-primary" href="#">Manage Share</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/encryption.js') }}"></script>
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}
