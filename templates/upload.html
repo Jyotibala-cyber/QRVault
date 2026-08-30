@@ -93,7 +93,7 @@
                 </div>
 
                 <div class="qr-section">
-                    <img id="qrCode" class="qr-image" alt="QR Code">
+                    <div id="qrCode" class="qr-image"></div>
                 </div>
 
                 <div class="share-link-section">
@@ -132,6 +132,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="{{ url_for('static', filename='js/encryption.js') }}"></script>
 <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 {% endblock %}

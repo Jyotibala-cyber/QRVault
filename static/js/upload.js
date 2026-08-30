@@ -104,9 +104,19 @@
             const shareUrl = result.share_url + "#" + keyBase64;
 
             document.getElementById("shareLink").value = shareUrl;
-            document.getElementById("qrCode").src = result.qr_code;
             document.getElementById("shareStatus").textContent = "ACTIVE";
             document.getElementById("shareDownloads").textContent = "0 / " + result.max_downloads;
+
+            // Generate QR code CLIENT-SIDE with full URL (including key fragment)
+            var qrContainer = document.getElementById("qrCode");
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: shareUrl,
+                width: 250,
+                height: 250,
+                colorDark: "#0B1F3A",
+                colorLight: "#ffffff",
+            });
 
             const expiresAt = new Date(result.expires_at);
             function updateCountdown() {
@@ -124,10 +134,13 @@
             document.getElementById("manageLink").href = "/manage/" + result.management_token;
 
             document.getElementById("downloadQrBtn").addEventListener("click", () => {
-                const link = document.createElement("a");
-                link.href = result.qr_code;
-                link.download = "qrvault-" + result.share_token.slice(0, 8) + ".png";
-                link.click();
+                var qrImg = qrContainer.querySelector("img");
+                if (qrImg) {
+                    var link = document.createElement("a");
+                    link.href = qrImg.src;
+                    link.download = "qrvault-" + result.share_token.slice(0, 8) + ".png";
+                    link.click();
+                }
             });
 
             document.getElementById("copyLinkBtn").addEventListener("click", () => {
