@@ -113,13 +113,16 @@ def download_file(token):
     if not safe or not safe.exists():
         return jsonify({"error": "File not found"}), 404
 
-    response = send_file(
-        str(safe),
+    with open(str(safe), "rb") as f:
+        file_data = f.read()
+
+    response = current_app.response_class(
+        response=file_data,
+        status=200,
         mimetype="application/octet-stream",
-        as_attachment=False,
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers.pop("Content-Disposition", None)
+    response.headers["Content-Type"] = "application/octet-stream"
     return response
 
 
