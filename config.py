@@ -26,7 +26,7 @@ class Config:
         "shs", "lnk", "url", "application", "gadget",
     }
 
-    CLEANUP_INTERVAL = 3600  # seconds
+    CLEANUP_INTERVAL = 300  # 5 minutes
     RETENTION_PERIOD = 86400  # 24 hours after expiry
 
 

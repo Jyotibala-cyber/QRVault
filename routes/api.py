@@ -97,9 +97,12 @@ def download_file(token):
     if not Share.is_valid(share):
         return jsonify({"error": "Share is no longer valid"}), 403
 
-    file_path = get_encrypted_file_path(share["stored_filename"])
-    if not file_path:
-        return jsonify({"error": "File not found on server"}), 404
+    safe = safe_path(current_app.config.get("STORAGE_PATH", "storage/encrypted"), share["stored_filename"])
+    if not safe or not safe.exists():
+        return jsonify({"error": "File not found"}), 404
+
+    with open(str(safe), "rb") as f:
+        file_data = f.read()
 
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
     updated_share = Share.increment_download(share["id"])
@@ -108,13 +111,8 @@ def download_file(token):
     if updated_share and updated_share["download_count"] >= updated_share["max_downloads"]:
         Share.update_status(share["id"], "limit_reached")
         AuditLog.log(share["id"], "limit_reached", "Max downloads hit")
-
-    safe = safe_path(current_app.config.get("STORAGE_PATH", "storage/encrypted"), share["stored_filename"])
-    if not safe or not safe.exists():
-        return jsonify({"error": "File not found"}), 404
-
-    with open(str(safe), "rb") as f:
-        file_data = f.read()
+        delete_encrypted_file(share["stored_filename"])
+        AuditLog.log(share["id"], "file_auto_deleted", "Limit reached")
 
     response = current_app.response_class(
         response=file_data,

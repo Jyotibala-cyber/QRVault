@@ -3,9 +3,19 @@ from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, jsonify
 from database.models import Share, AuditLog
 from security.tokens import hash_token
+from services.file_service import delete_encrypted_file
 
 logger = logging.getLogger(__name__)
 sharing_bp = Blueprint("sharing", __name__)
+
+
+def _delete_file_if_terminal(share):
+    """Delete file immediately when share reaches terminal state."""
+    if share["status"] in ("expired", "revoked", "limit_reached"):
+        deleted = delete_encrypted_file(share["stored_filename"])
+        if deleted:
+            AuditLog.log(share["id"], "file_auto_deleted", f"State: {share['status']}")
+            logger.info(f"Auto-deleted file for share {share['id']} (state: {share['status']})")
 
 
 def _get_share_or_error(token):
@@ -20,12 +30,15 @@ def _get_share_or_error(token):
     if expires_at < now and share["status"] != "expired":
         Share.update_status(share["id"], "expired")
         share["status"] = "expired"
+        _delete_file_if_terminal(share)
     if share["revoked"] and share["status"] != "revoked":
         Share.update_status(share["id"], "revoked")
         share["status"] = "revoked"
+        _delete_file_if_terminal(share)
     if share["download_count"] >= share["max_downloads"] and share["status"] not in ("limit_reached", "expired", "revoked"):
         Share.update_status(share["id"], "limit_reached")
         share["status"] = "limit_reached"
+        _delete_file_if_terminal(share)
     return share, share["status"]
 
 
